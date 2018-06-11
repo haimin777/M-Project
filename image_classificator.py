@@ -38,34 +38,35 @@ def recursive_list(dir_from = 'C:\\Users\\Haimin\\Dicom\\test',
     
 def print_image(im):
     ds = pydicom.dcmread(im)
-    plt.figure(figsize=(5, 10)) #displaying image size
+    plt.figure(figsize=(5, 10))  #displaying image size
     plt.imshow(ds.pixel_array, cmap=plt.cm.bone)
+    plt.ylabel(im)
     plt.show()
+
 
 def image_classifier(dir_from='C:\\Users\\Haimin\\Dicom\\DICOM2',
                      dir_to0 = 'C:\\Users\\Haimin\\Dicom\\01',
                      dir_to1 ='C:\\Users\\Haimin\\Dicom\\11'):
-    #print(os.listdir(dir_from))
+#print(os.listdir(dir_from))
     os.chdir(dir_from)
-    plt.ion()
+    #plt.ion()
     for p1 in os.listdir(dir_from):
         print_image(p1)
         a = input('for image {} 0 - bad or 1 - good pics, 2 - I dont know: '.format(p1))
         if a == '0':
             print('sended to dir 0')
             sh.copyfile(p1, os.path.join(dir_to0, p1))
+            plt.close()
             
         elif a == '1':
             print('sended to dir 1')
             sh.copyfile(p1, os.path.join(dir_to1,p1))
         elif a =='2':
             print('not classified')
-                                
             
         
 if __name__ == "__main__":
     
     #recursive_list()
     #image_sort()
-    
     image_classifier()   
