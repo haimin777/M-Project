@@ -29,13 +29,13 @@ class Preprocessing:
         os.chdir(self.workdir)
         for name in os.listdir(self.workdir):
             ds = pyd.dcmread(name)
-        data = ds.pixel_array
-        data_downsampling = data[::8, ::8]  # downsize in 8 times
-        ds.PixelData = data_downsampling.tostring()
-        ds.Rows, ds.Columns = data_downsampling.shape
-        ds.AccessionNumber = '01'
-        pyd.dcmwrite(name, ds)
-        print('tag added and reshaped to', name)
+            data = ds.pixel_array
+            data_downsampling = data[::8, ::8]  # downsize in 8 times
+            ds.PixelData = data_downsampling.tostring()
+            ds.Rows, ds.Columns = data_downsampling.shape
+            ds.AccessionNumber = '01'
+            pyd.dcmwrite(name, ds)
+            print('tag added and reshaped to', name)
 
     def show_tags(self, im):
         os.chdir(self.workdir)
@@ -45,14 +45,18 @@ class Preprocessing:
 
     def create_input(self):
         os.chdir(self.workdir)
-        array_list = list()
+        array_x_list = list()
+        array_y_list = list()
         for image in os.listdir(self.workdir):
             ds = pyd.dcmread(image)
-            array_list.append(ds.pixel_array)
-        input_images = np.expand_dims(np.array(array_list), -1)
+            array_x_list.append(ds.pixel_array)
+            array_y_list.append(ds.AccessionNumber)
+        input_images = np.expand_dims(np.array(array_x_list), -1)
         print(input_images.shape)
+        print(array_y_list)
 
 
 if __name__ == "__main__":
     start = Preprocessing()
+    start.preprocessing()
     start.create_input()
