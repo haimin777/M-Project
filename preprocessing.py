@@ -1,8 +1,8 @@
 import pydicom as pyd
 import os
 import matplotlib.pyplot as plt
-import image_classificator as ic
 import numpy as np
+import cv2
 
 
 def image_downsampling(im, work_dir='C:\\Users\\Haimin\\Dicom\\01'):
@@ -43,7 +43,7 @@ class Preprocessing:
         print(ds.AccessionNumber, '\n', ds.pixel_array.shape)
         # print(ds.dir('num'))
 
-    def create_input(self):
+    def create_input(self): #create numpy arrays from taken dicom files
         os.chdir(self.workdir)
         array_x_list = list()
         array_y_list = list()
@@ -55,8 +55,22 @@ class Preprocessing:
         print(input_images.shape)
         print(array_y_list)
 
+    def create_input_image(self, dcm_img):   #create reshaped to 1152x896 image for using in NN
+
+        ds = pyd.dcmread(dcm_img)
+        data = ds.pixel_array
+        d2 = cv2.resize(data, (896, 1152), interpolation=cv2.INTER_AREA)
+        d2 = np.expand_dims(d2, -1)
+        d2 = np.expand_dims(d2, 0)
+        print('reshaped from {}, to {}'.format(data.shape, d2.shape))
+
+        return d2
+
+
+
 
 if __name__ == "__main__":
     start = Preprocessing()
-    start.preprocessing()
-    start.create_input()
+    #start.preprocessing()
+    #start.create_input()
+    start.create_input_image('test')
