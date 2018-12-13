@@ -1,18 +1,14 @@
 import asyncio
 import os
 import shutil as sh
-
+from os.path import join
 import cv2
 import numpy as np
 import pydicom as pyd
 import pyinotify
 from keras.models import load_model
 
-import add_tag
 
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# !!!!reserved, original in M-Git!!!!!!
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 def make_predictition(image, model_path='/home/haimin/PycharmProjects/Tensorflow/ddsm_YaroslavNet_s10.h5'):
     image = pyd.dcmread(image).pixel_array
@@ -23,17 +19,67 @@ def make_predictition(image, model_path='/home/haimin/PycharmProjects/Tensorflow
     res = model.predict(image)
     return res
 
+def process_to_file(folder, img):
+    # make predictition for new image and save it to csv
+    csv_name = join(folder, folder.split('/')[-1])
+    predict = str(make_predictition(img)[0][0])
+    # print(predict[0][0])
+    if os.path.isfile(csv_name):
+        print('add result to file')
+        with open(csv_name, 'a') as csv_file:
+            csv_file.write(predict)
+            csv_file.write('\n')
 
-def process_folder(folder):
-    # make predictition for folder
+    else:
+        print('no files in current folder, then make it')
+        with open(csv_name, 'w') as csv_file:
+            csv_file.write(predict)
+            csv_file.write('\n')
+
+
+def process_folder(uid_folder):
+    # get predictions for folder from specific file, where they stored
+
     res_list = []
-    for root, dirs, images in os.walk(folder):
-        for image in images:
-            res = make_predictition(os.path.join(root, image))
-            res_list.append(res[0][0])
-            print('image processed, res_list: ', res_list)
+    path = join(uid_folder, uid_folder.split('/')[-1])
+    print(path)
+    with open(path) as f:
+        for row in f:
+            print(row)
+            res_list.append(float(row))
     return res_list
 
+
+def add_tag(image, tag):
+    # add tag and save in another folder (target)
+    print(image, 'from add tag')
+    img = pyd.dcmread(image)
+    img.AccessionNumber = tag
+    img.ImageComments = tag
+    img.StudyID = tag
+    # pyd.dcmwrite(target, img)
+    pyd.dcmwrite(image, img)
+
+
+    print('tag added {} to {}'.format(tag, image))
+
+
+def add_tag_to_one_folder(folder, tag):
+    # add given tag to same folder. No exchange folders
+
+    for root, _, files in os.walk(folder):
+        for f in files:
+            if isdicom(join(root, f)):
+                print(f, '---- add tag to folder')
+                # add_tag(join(root, f), tag)
+                add_tag(join(root, f), tag)
+
+def isdicom(file_path):
+    try:
+        pyd.dcmread(file_path)
+        return True
+    except:
+        return False
 
 def move_folder_to_pacs(folder):
     # move processed folder to PACS
@@ -81,7 +127,8 @@ class EventHandler(pyinotify.ProcessEvent):
     def process_IN_CLOSE_WRITE(self, event):
 
         # !!!! change to exacly file system
-        if not event.dir:  # and event.name.endswith('.dcm'):  # only for new files, not folders
+        #if not event.dir:  # and event.name.endswith('.dcm'):  # only for new files, not folders
+        if not event.dir and isdicom(event.pathname):
 
             # print(event.__dict__)
 
@@ -91,46 +138,53 @@ class EventHandler(pyinotify.ProcessEvent):
             last_uid = self.last_uid
             if check_new_image(event.pathname, last_uid):
                 # if existing series than copy new file to folder with name seriesUID
-                #print('image with UID: ', last_uid)
-                sh.move(event.pathname, os.path.join(self.work_folder, last_uid))
+                # print('image with UID: ', last_uid)
+
+                uid_folder = join(self.work_folder, last_uid)
+                sh.move(event.pathname, uid_folder)
+                # process if folder image
+                process_to_file(uid_folder, join(uid_folder, event.name))
                 print('copy {} to {} folder'.format(event.name, last_uid))
-                self.last_listdir = os.listdir(os.path.join(self.work_folder, self.last_uid))  #save last folder state
+                self.last_listdir = os.listdir(join(self.work_folder, self.last_uid))  #save last folder state
 
             elif last_uid is None:
                 # if start working
-                os.makedirs(os.path.join(self.work_folder, get_series_uid(event.pathname)))
+                os.makedirs(join(self.work_folder, get_series_uid(event.pathname)))
                 self.last_uid = get_series_uid(event.pathname)
-                sh.move(event.pathname, os.path.join(self.work_folder, self.last_uid))
+                uid_folder = join(self.work_folder, self.last_uid)
+
+                sh.move(event.pathname, uid_folder)
+                process_to_file(uid_folder, join(uid_folder, event.name))
                 print('---new folder created {} for file {}'.format(self.last_uid, event.name))
-                self.last_listdir = os.listdir(os.path.join(self.work_folder, self.last_uid))
+                self.last_listdir = os.listdir(join(self.work_folder, self.last_uid))
 
             else:
                 if str(event.name) not in self.last_listdir:
                     print('event name', str(event.name))
                     print('last listdir: ', self.last_listdir)
-                    print('current dirlist: ', os.listdir(os.path.join(self.work_folder, self.last_uid)))
-                    self.last_listdir = os.listdir(os.path.join(self.work_folder, self.last_uid))
+                    print('current dirlist: ', os.listdir(join(self.work_folder, self.last_uid)))
+                    self.last_listdir = os.listdir(join(self.work_folder, self.last_uid))
                     new_uid = get_series_uid(event.pathname)
-                    # predict_list = process_folder(os.path.join(self.work_folder, self.last_uid))
+                    # predict_list = process_folder(join(self.work_folder, self.last_uid))
                     predict_list = [0.5, 0.7, 0.9]
                     # print(predict_list)
                     if min(predict_list) <= 0.7:
                         print('add tags 1')
-                        add_tag.add_tag_to_one_folder(os.path.join(self.work_folder, self.last_uid), tag='tag1')
-                        #move_folder_to_pacs(os.path.join(self.work_folder, self.last_uid))
+                        add_tag_to_one_folder(join(self.work_folder, self.last_uid), tag='tag1')
+                        #move_folder_to_pacs(join(self.work_folder, self.last_uid))
                         print('folder moved to PACS {}'.format(self.last_uid))
                     else:
                         print('add tags 0')
-                        add_tag.add_tag_to_one_folder(os.path.join(self.work_folder, self.last_uid), 'tag2')
-                        move_folder_to_pacs(os.path.join(self.work_folder, self.last_uid))
+                        add_tag_to_one_folder(join(self.work_folder, self.last_uid), 'tag2')
+                        move_folder_to_pacs(join(self.work_folder, self.last_uid))
                         print('folder moved to PACS {}'.format(self.last_uid))
 
                     self.last_uid = new_uid
 
                     try:
                         print('---', self.last_listdir, '---', event.name)
-                        os.makedirs(os.path.join(self.work_folder, self.last_uid))
-                        sh.move(event.pathname, os.path.join(self.work_folder, self.last_uid))
+                        os.makedirs(join(self.work_folder, self.last_uid))
+                        sh.move(event.pathname, join(self.work_folder, self.last_uid))
                     except Exception as e:
                         print(e)
                     print('new folder created {} for file {}'.format(self.last_uid, event.name))
