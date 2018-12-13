@@ -31,7 +31,7 @@ def process_to_file(folder, img):
             csv_file.write('\n')
 
     else:
-        print('no files in current folder, then make it')
+        print('create file for writing predict results')
         with open(csv_name, 'w') as csv_file:
             csv_file.write(predict)
             csv_file.write('\n')
@@ -45,8 +45,9 @@ def process_folder(uid_folder):
     print(path)
     with open(path) as f:
         for row in f:
-            print(row)
             res_list.append(float(row))
+    os.remove(path)
+    print('--------file with predicts deleted------')
     return res_list
 
 
@@ -165,13 +166,13 @@ class EventHandler(pyinotify.ProcessEvent):
                     print('current dirlist: ', os.listdir(join(self.work_folder, self.last_uid)))
                     self.last_listdir = os.listdir(join(self.work_folder, self.last_uid))
                     new_uid = get_series_uid(event.pathname)
-                    # predict_list = process_folder(join(self.work_folder, self.last_uid))
-                    predict_list = [0.5, 0.7, 0.9]
+                    predict_list = process_folder(join(self.work_folder, self.last_uid))
+                    #predict_list = [0.5, 0.7, 0.9]
                     # print(predict_list)
                     if min(predict_list) <= 0.7:
                         print('add tags 1')
                         add_tag_to_one_folder(join(self.work_folder, self.last_uid), tag='tag1')
-                        #move_folder_to_pacs(join(self.work_folder, self.last_uid))
+                        move_folder_to_pacs(join(self.work_folder, self.last_uid))
                         print('folder moved to PACS {}'.format(self.last_uid))
                     else:
                         print('add tags 0')
