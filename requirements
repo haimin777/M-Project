@@ -3,3 +3,4 @@ shutil
 matplotlib
 numpy
 opencv-python
+pyinotify

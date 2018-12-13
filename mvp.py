@@ -42,7 +42,7 @@ def move_folder_to_pacs(folder):
 
 
 def get_series_uid(img):
-    return (pyd.dcmread(img).SeriesInstanceUID)
+    return (pyd.dcmread(img, force=True).SeriesInstanceUID)
 
 
 def check_new_image(img, last_uid):
@@ -69,19 +69,21 @@ def get_total_files_number(self, folder):
 
 
 class EventHandler(pyinotify.ProcessEvent):
-    def my_init(self, work_folder='/home/haimin/Dicom/work'):
+    def my_init(self, work_folder='/incoming/data'):
         self.last_uid = None
         self.work_folder = work_folder
         self.last_listdir = None
 
 
     def process_IN_CLOSE_WRITE(self, event):
-        if not event.dir:  # only for new files, not folders
+
+        # !!!! change to exacly file system
+        if not event.dir:  # and event.name.endswith('.dcm'):  # only for new files, not folders
 
             # print(event.__dict__)
 
             # print('last uid: ', self.last_uid)
-            #print("Got new file: ", event.pathname)
+            print("Got new file: ", event.pathname)
 
             last_uid = self.last_uid
             if check_new_image(event.pathname, last_uid):
@@ -112,12 +114,12 @@ class EventHandler(pyinotify.ProcessEvent):
                     if min(predict_list) <= 0.7:
                         print('add tags 1')
                         add_tag.add_tag_to_one_folder(os.path.join(self.work_folder, self.last_uid), tag='tag1')
-                        move_folder_to_pacs(os.path.join(self.work_folder, self.last_uid))
+                        #move_folder_to_pacs(os.path.join(self.work_folder, self.last_uid))
                         print('folder moved to PACS {}'.format(self.last_uid))
                     else:
                         print('add tags 0')
                         add_tag.add_tag_to_one_folder(os.path.join(self.work_folder, self.last_uid), 'tag2')
-                        move_folder_to_pacs(os.path.join(self.work_folder, self.last_uid))
+                        #move_folder_to_pacs(os.path.join(self.work_folder, self.last_uid))
                         print('folder moved to PACS {}'.format(self.last_uid))
 
                     self.last_uid = new_uid
@@ -140,7 +142,7 @@ if __name__ == '__main__':
 
     notifier = pyinotify.AsyncioNotifier(wm, loop, default_proc_fun=EventHandler())
 
-    wdd = wm.add_watch('/home/haimin/Dicom/work', mask, rec=True, auto_add=True)
+    wdd = wm.add_watch('/incoming/data', mask, rec=True, auto_add=True)
     # wdd = wm.add_watch('/var/lib/orthanc/db-v6', mask, rec=True, auto_add=True)
 
     try:
