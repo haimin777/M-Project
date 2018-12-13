@@ -10,6 +10,9 @@ from keras.models import load_model
 
 import add_tag
 
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# !!!!reserved, original in M-Git!!!!!!
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 def make_predictition(image, model_path='/home/haimin/PycharmProjects/Tensorflow/ddsm_YaroslavNet_s10.h5'):
     image = pyd.dcmread(image).pixel_array
@@ -20,26 +23,8 @@ def make_predictition(image, model_path='/home/haimin/PycharmProjects/Tensorflow
     res = model.predict(image)
     return res
 
-def process_to_file(folder, img):
-    # make predictition for new image and save it to csv
-    csv_name = os.path.join(folder, folder.split('/')[-1])
-    predict = str(make_predictition(img)[0][0])
-    # print(predict[0][0])
-    if os.path.isfile(csv_name):
-        print('add result to file')
-        with open(csv_name, 'a') as csv_file:
-            csv_file.write(predict)
-            csv_file.write('\n')
 
-    else:
-        print('no files in current folder, then make it')
-        with open(csv_name, 'w') as csv_file:
-            csv_file.write(predict)
-            csv_file.write('\n')
-
-
-def process_folder(uid_folder):
-    '''
+def process_folder(folder):
     # make predictition for folder
     res_list = []
     for root, dirs, images in os.walk(folder):
@@ -47,15 +32,6 @@ def process_folder(uid_folder):
             res = make_predictition(os.path.join(root, image))
             res_list.append(res[0][0])
             print('image processed, res_list: ', res_list)
-
-    '''
-    res_list = []
-    path = os.path.join(uid_folder, uid_folder.split('/')[-1])
-    print(path)
-    with open(path) as f:
-        for row in f:
-            print(row)
-            res_list.append(float(row))
     return res_list
 
 
@@ -81,15 +57,8 @@ def check_new_image(img, last_uid):
     return UID == last_uid
 
 
-def isdicom(file_path):
-    try:
-        pyd.dcmread(file_path)
-        return True
-    except:
-        return False
 
-
-
+#
 def get_total_files_number(self, folder):
     n = 0
     for root, dirs, files in os.walk(folder):
@@ -112,8 +81,7 @@ class EventHandler(pyinotify.ProcessEvent):
     def process_IN_CLOSE_WRITE(self, event):
 
         # !!!! change to exacly file system
-        #if not event.dir and isdicom(event.pathname):  # only for new files, not folders
-        if isdicom(event.pathname):  # only for new files, not folders
+        if not event.dir:  # and event.name.endswith('.dcm'):  # only for new files, not folders
 
             # print(event.__dict__)
 
@@ -124,10 +92,7 @@ class EventHandler(pyinotify.ProcessEvent):
             if check_new_image(event.pathname, last_uid):
                 # if existing series than copy new file to folder with name seriesUID
                 #print('image with UID: ', last_uid)
-                uid_folder = os.path.join(self.work_folder, last_uid)
-                sh.move(event.pathname, uid_folder)
-                #process if folder image
-                process_to_file(uid_folder, os.path.join(uid_folder, event.name))
+                sh.move(event.pathname, os.path.join(self.work_folder, last_uid))
                 print('copy {} to {} folder'.format(event.name, last_uid))
                 self.last_listdir = os.listdir(os.path.join(self.work_folder, self.last_uid))  #save last folder state
 
@@ -135,10 +100,7 @@ class EventHandler(pyinotify.ProcessEvent):
                 # if start working
                 os.makedirs(os.path.join(self.work_folder, get_series_uid(event.pathname)))
                 self.last_uid = get_series_uid(event.pathname)
-                uid_folder = os.path.join(self.work_folder, self.last_uid)
-
-                sh.move(event.pathname, uid_folder)
-                process_to_file(uid_folder, os.path.join(uid_folder, event.name))
+                sh.move(event.pathname, os.path.join(self.work_folder, self.last_uid))
                 print('---new folder created {} for file {}'.format(self.last_uid, event.name))
                 self.last_listdir = os.listdir(os.path.join(self.work_folder, self.last_uid))
 
@@ -149,9 +111,9 @@ class EventHandler(pyinotify.ProcessEvent):
                     print('current dirlist: ', os.listdir(os.path.join(self.work_folder, self.last_uid)))
                     self.last_listdir = os.listdir(os.path.join(self.work_folder, self.last_uid))
                     new_uid = get_series_uid(event.pathname)
-                    #predict_list = process_folder(os.path.join(self.work_folder, self.last_uid))
+                    # predict_list = process_folder(os.path.join(self.work_folder, self.last_uid))
                     predict_list = [0.5, 0.7, 0.9]
-                    print('predict list:', predict_list)
+                    # print(predict_list)
                     if min(predict_list) <= 0.7:
                         print('add tags 1')
                         add_tag.add_tag_to_one_folder(os.path.join(self.work_folder, self.last_uid), tag='tag1')
@@ -160,7 +122,7 @@ class EventHandler(pyinotify.ProcessEvent):
                     else:
                         print('add tags 0')
                         add_tag.add_tag_to_one_folder(os.path.join(self.work_folder, self.last_uid), 'tag2')
-                        #move_folder_to_pacs(os.path.join(self.work_folder, self.last_uid))
+                        move_folder_to_pacs(os.path.join(self.work_folder, self.last_uid))
                         print('folder moved to PACS {}'.format(self.last_uid))
 
                     self.last_uid = new_uid

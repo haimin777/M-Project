@@ -8,6 +8,7 @@ import mvp
 
 def add_tag(image, tag):
     # add tag and save in another folder (target)
+    print(image, 'from add tag')
     img = pyd.dcmread(image)
     img.AccessionNumber = tag
     img.ImageComments = tag
@@ -19,26 +20,13 @@ def add_tag(image, tag):
     print('tag added {} to {}'.format(tag, image))
 
 
-def add_tag_to_folder(folder, last_uid, tag):
-    for root, dirs, files in os.walk(folder):
-        for f in files:
-
-            try:
-                # add_tag(os.path.join(root, f), tag)
-                add_tag(join(root, f), join('/home/haimin/Dicom/exchange', last_uid, f), tag)
-
-            except Exception as e:
-                print('Exception ocqured!')
-                print(e)
-                os.makedirs(join('/home/haimin/Dicom/exchange', last_uid))
-                add_tag(join(root, f), join('/home/haimin/Dicom/exchange', last_uid, f), tag)
-
 
 def add_tag_to_one_folder(folder, tag):
     # add given tag to same folder. No exchange folders
 
     for root, _, files in os.walk(folder):
         for f in files:
+            print(f, '---- add tag to folder')
             # add_tag(os.path.join(root, f), tag)
             add_tag(join(root, f), tag)
 
