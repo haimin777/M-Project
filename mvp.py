@@ -142,7 +142,7 @@ class EventHandler(pyinotify.ProcessEvent):
                 # print('image with UID: ', last_uid)
 
                 uid_folder = join(self.work_folder, last_uid)
-                sh.move(event.pathname, uid_folder)
+                sh.copy(event.pathname, uid_folder)
                 # process if folder image
                 process_to_file(uid_folder, join(uid_folder, event.name))
                 print('copy {} to {} folder'.format(event.name, last_uid))
@@ -154,7 +154,7 @@ class EventHandler(pyinotify.ProcessEvent):
                 self.last_uid = get_series_uid(event.pathname)
                 uid_folder = join(self.work_folder, self.last_uid)
 
-                sh.move(event.pathname, uid_folder)
+                sh.copy(event.pathname, uid_folder)
                 process_to_file(uid_folder, join(uid_folder, event.name))
                 print('---new folder created {} for file {}'.format(self.last_uid, event.name))
                 self.last_listdir = os.listdir(join(self.work_folder, self.last_uid))
@@ -185,7 +185,7 @@ class EventHandler(pyinotify.ProcessEvent):
                     try:
                         print('---', self.last_listdir, '---', event.name)
                         os.makedirs(join(self.work_folder, self.last_uid))
-                        sh.move(event.pathname, join(self.work_folder, self.last_uid))
+                        sh.copy(event.pathname, join(self.work_folder, self.last_uid))
                     except Exception as e:
                         print(e)
                     print('new folder created {} for file {}'.format(self.last_uid, event.name))
