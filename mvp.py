@@ -58,7 +58,6 @@ def add_tag(image, tag):
     img.AccessionNumber = tag
     img.ImageComments = tag
     img.StudyID = tag
-    # pyd.dcmwrite(target, img)
     pyd.dcmwrite(image, img)
 
 
