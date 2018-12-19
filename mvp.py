@@ -80,6 +80,7 @@ def isdicom(file_path):
         if pyd.dcmread(file_path).ImageType[0] != 'ORIGINAL':
             return True
         else:
+            print('RAW image acepted')
             return False
     except:
         return False
@@ -129,10 +130,39 @@ class EventHandler(pyinotify.ProcessEvent):
     def my_init(self, work_folder='/incoming/data'):
         self.last_uid = None
         self.work_folder = work_folder
-        self.last_listdir = []
+        self.last_listdir = None
         self.proc_list = []
 
 
+    def process_IN_CLOSE_WRITE(self, event):
+
+
+        if not event.dir and isdicom(event.pathname):
+            # remember current folder
+            #print(event.__dict__)
+            #print(event.path.split('/')[3])
+            current_dir = event.path.split('/')[3]
+            if self.last_listdir == None: # if work just start
+                process_to_file(join('/incoming/data', current_dir), event.pathname)
+
+                self.last_listdir = current_dir
+
+            elif self.last_listdir == current_dir:
+                process_to_file(join('/incoming/data', current_dir), event.pathname)
+                #print(event.name)
+
+            elif self.last_listdir != current_dir:
+
+                print('send to pacs', self.last_listdir)
+                process_to_file(join('/incoming/data', current_dir), event.pathname)
+
+                self.last_listdir = current_dir
+
+
+
+
+    '''  
+    
     def process_IN_CLOSE_WRITE(self, event):
 
         # !!!! change to exacly file system
@@ -176,8 +206,7 @@ class EventHandler(pyinotify.ProcessEvent):
             else:
                 print('------not 2 first cases------------')
                 if str(event.name) not in self.last_listdir:
-                    print('event name', str(event.name))
-                    print('last listdir: ', self.last_listdir)
+                    #print('last listdir: ', self.last_listdir)
                     print('current dirlist: ', os.listdir(join(self.work_folder, self.last_uid)))
                     self.last_listdir = os.listdir(join(self.work_folder, self.last_uid))
                     new_uid = get_series_uid(event.pathname)
@@ -205,7 +234,7 @@ class EventHandler(pyinotify.ProcessEvent):
                         print(e)
                     print('new folder created {} for file {}'.format(self.last_uid, event.name))
 
-
+        '''
 if __name__ == '__main__':
 
     wm = pyinotify.WatchManager()  # Watch Manager
