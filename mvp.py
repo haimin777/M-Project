@@ -2,12 +2,12 @@ import asyncio
 import os
 import shutil as sh
 from os.path import join
+
 import cv2
 import numpy as np
 import pydicom as pyd
 import pyinotify
 from keras.models import load_model
-
 
 
 def make_predictition(image, model_path='/home/haimin/PycharmProjects/Tensorflow/ddsm_YaroslavNet_s10.h5'):
@@ -18,6 +18,7 @@ def make_predictition(image, model_path='/home/haimin/PycharmProjects/Tensorflow
     model = load_model(model_path)
     res = model.predict(image)
     return res
+
 
 def process_to_file(folder, img):
     # make predictition for new image and save it to csv
@@ -60,7 +61,6 @@ def add_tag(image, tag):
     img.StudyID = tag
     pyd.dcmwrite(image, img)
 
-
     print('tag added {} to {}'.format(tag, image))
 
 
@@ -74,12 +74,21 @@ def add_tag_to_one_folder(folder, tag):
                 # add_tag(join(root, f), tag)
                 add_tag(join(root, f), tag)
 
+
 def isdicom(file_path):
     try:
-        pyd.dcmread(file_path)
-        return True
+        if pyd.dcmread(file_path).ImageType[0] != 'ORIGINAL':
+            return True
+        else:
+            return False
     except:
         return False
+
+
+def is_processed(processed_list, image):
+
+    pass
+
 
 def move_folder_to_pacs(folder):
     # move processed folder to PACS
@@ -103,7 +112,6 @@ def check_new_image(img, last_uid):
     return UID == last_uid
 
 
-
 #
 def get_total_files_number(self, folder):
     n = 0
@@ -121,14 +129,15 @@ class EventHandler(pyinotify.ProcessEvent):
     def my_init(self, work_folder='/incoming/data'):
         self.last_uid = None
         self.work_folder = work_folder
-        self.last_listdir = None
+        self.last_listdir = []
+        self.proc_list = []
 
 
     def process_IN_CLOSE_WRITE(self, event):
 
         # !!!! change to exacly file system
-        #if not event.dir:  # and event.name.endswith('.dcm'):  # only for new files, not folders
-        if not event.dir and isdicom(event.pathname):
+        # if not event.dir:  # and event.name.endswith('.dcm'):  # only for new files, not folders
+        if not event.dir and isdicom(event.pathname) and event.name not in self.last_listdir:
 
             # print(event.__dict__)
 
@@ -138,27 +147,35 @@ class EventHandler(pyinotify.ProcessEvent):
             last_uid = self.last_uid
             if check_new_image(event.pathname, last_uid):
                 # if existing series than copy new file to folder with name seriesUID
-                # print('image with UID: ', last_uid)
+                print('image with UID: ', last_uid)
 
                 uid_folder = join(self.work_folder, last_uid)
                 sh.copy(event.pathname, uid_folder)
                 # process if folder image
                 process_to_file(uid_folder, join(uid_folder, event.name))
                 print('copy {} to {} folder'.format(event.name, last_uid))
-                self.last_listdir = os.listdir(join(self.work_folder, self.last_uid))  #save last folder state
+                self.last_listdir = os.listdir(join(self.work_folder, self.last_uid))  # save last folder state
+                self.proc_list.append(event.name)
+                print(self.last_listdir, '----')
+                print('proc_list:', self.proc_list)
 
             elif last_uid is None:
                 # if start working
                 os.makedirs(join(self.work_folder, get_series_uid(event.pathname)))
                 self.last_uid = get_series_uid(event.pathname)
-                uid_folder = join(self.work_folder, self.last_uid)
+                uid_folder = join(self.work_folder, self.last_uid) # path to folder with name SeriesinstanceUID
 
                 sh.copy(event.pathname, uid_folder)
                 process_to_file(uid_folder, join(uid_folder, event.name))
                 print('---new folder created {} for file {}'.format(self.last_uid, event.name))
                 self.last_listdir = os.listdir(join(self.work_folder, self.last_uid))
+                self.proc_list.append(event.name)
+                self.proc_list.append(event.name)
+                print(self.last_listdir, '----')
+                print('proc_list:', self.proc_list)
 
             else:
+                print('------not 2 first cases------------')
                 if str(event.name) not in self.last_listdir:
                     print('event name', str(event.name))
                     print('last listdir: ', self.last_listdir)
@@ -166,7 +183,7 @@ class EventHandler(pyinotify.ProcessEvent):
                     self.last_listdir = os.listdir(join(self.work_folder, self.last_uid))
                     new_uid = get_series_uid(event.pathname)
                     predict_list = process_folder(join(self.work_folder, self.last_uid))
-                    #predict_list = [0.5, 0.7, 0.9]
+                    # predict_list = [0.5, 0.7, 0.9]
                     # print(predict_list)
                     if min(predict_list) <= 0.7:
                         print('add tags 1')
