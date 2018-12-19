@@ -170,7 +170,6 @@ class EventHandler(pyinotify.ProcessEvent):
                 print('---new folder created {} for file {}'.format(self.last_uid, event.name))
                 self.last_listdir = os.listdir(join(self.work_folder, self.last_uid))
                 self.proc_list.append(event.name)
-                self.proc_list.append(event.name)
                 print(self.last_listdir, '----')
                 print('proc_list:', self.proc_list)
 
