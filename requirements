@@ -1,5 +1,4 @@
 pydicom
-shutil
 matplotlib
 numpy
 opencv-python
