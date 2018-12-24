@@ -11,7 +11,7 @@ from keras.models import load_model
 
 
 def make_predictition(image, model_path='/home/haimin/PycharmProjects/Tensorflow/ddsm_YaroslavNet_s10.h5'):
-    image = pyd.dcmread(image).pixel_array
+    image = pyd.dcmread(image).pixel_array/14.5
     image = cv2.resize(image, (896, 1152), interpolation=cv2.INTER_AREA)
     image = np.expand_dims(image, -1)
     image = np.expand_dims(image, 0)
