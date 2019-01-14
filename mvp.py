@@ -11,7 +11,7 @@ from keras.models import load_model
 
 
 def make_predictition(image, model_path='/home/haimin/PycharmProjects/Tensorflow/ddsm_YaroslavNet_s10.h5'):
-    image = pyd.dcmread(image).pixel_array
+    image = pyd.dcmread(image).pixel_array/14.5
     image = cv2.resize(image, (896, 1152), interpolation=cv2.INTER_AREA)
     image = np.expand_dims(image, -1)
     image = np.expand_dims(image, 0)
@@ -38,20 +38,6 @@ def process_to_file(folder, img):
             csv_file.write('\n')
 
 
-def process_folder(uid_folder):
-    # get predictions for folder from specific file, where they stored
-
-    res_list = []
-    path = join(uid_folder, uid_folder.split('/')[-1])
-    print(path)
-    with open(path) as f:
-        for row in f:
-            res_list.append(float(row))
-    os.remove(path)
-    print('--------file with predicts deleted------')
-    return res_list
-
-
 def add_tag(image, tag):
     # add tag and save in another folder (target)
     print(image, 'from add tag')
@@ -70,7 +56,10 @@ def add_tag_to_one_folder(folder, folder_name, tag1, tag2):
 
     # find txt file with predictions and convert to list
     predict_list = []
-    with open(glob.glob(folder + '/' + folder_name)[0], 'r') as f:
+    print(folder + '/' + folder_name, '\n'*3, '=)=(=='*10)
+    #with open(glob.glob(folder + '/' + folder_name)[0], 'r') as f:
+    with open(folder + '/' + folder_name, 'r') as f:
+
         for row in f:
             predict_list.append(float(row))
 
@@ -97,34 +86,21 @@ def isdicom(file_path):
         if pyd.dcmread(file_path).ImageType[0] != 'ORIGINAL':
             return True
         else:
-            # print('RAW image acepted')
+            print('RAW image acepted')
             return False
-    except:
+    except Exception as e:
+        #print(e)
         return False
 
 
 def send_folder_to_pacs(folder):
     # move processed folder to PACS
-    # comand = 'dcmsend 127.0.0.1 4242 --scan-directories '
-    # comand = 'dcmsend 3.120.139.162 4242 --scan-directories '
+
     dcm_paths = glob.glob(folder + '/*/*/*.dcm')
     for f in dcm_paths:
         comand = 'dcmsend 3.120.139.162 4242 ' + f
         print(f, '-- sended to pask')
         os.system(comand)
-
-
-def get_series_uid(img):
-    return (pyd.dcmread(img, force=True).SeriesInstanceUID)
-
-
-def check_new_image(img, last_uid):
-    # true if img from processing series
-    # img - new image path
-    # last_uid - series uid of previous image
-    UID = get_series_uid(img)
-    # print('----'*10, UID)
-    return UID == last_uid
 
 
 class EventHandler(pyinotify.ProcessEvent):
