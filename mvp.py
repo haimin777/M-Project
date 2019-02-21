@@ -109,6 +109,7 @@ class EventHandler(pyinotify.ProcessEvent):
         self.work_folder = work_folder
         self.last_listdir = None
         self.proc_list = []
+        self.image_count = 0
 
     def process_IN_CLOSE_WRITE(self, event):
 
