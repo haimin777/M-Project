@@ -100,7 +100,7 @@ def send_folder_to_pacs(folder):
     for f in dcm_paths:
         comand = 'dcmsend 3.120.139.162 4242 ' + f
         print(f, '-- sended to pask')
-        os.system(comand)
+        #os.system(comand)
 
 
 class EventHandler(pyinotify.ProcessEvent):
@@ -125,25 +125,56 @@ class EventHandler(pyinotify.ProcessEvent):
                 self.proc_list.append(current_dir)
 
                 self.last_listdir = current_dir
+                self.image_count += 1
+                print(self.image_count, 'with None')
 
-            elif self.last_listdir == current_dir:
+
+            elif self.last_listdir == current_dir and self.image_count !=0:
                 process_to_file(join(self.work_folder, current_dir), event.pathname)
+                self.image_count += 1
+                print(self.image_count, 'inside loop')
                 # print(event.name)
                 if current_dir not in self.proc_list:
                     self.proc_list.append(current_dir)
 
+                elif self.image_count == 4:
+                    # check if folder new or already 4 image processed
 
-            elif self.last_listdir != current_dir and current_dir not in self.proc_list:  # check if folder new
+                    # print('\n'*3, 'proc_list: ', self.proc_list, '\n', current_dir, '\n'*2, self.last_listdir)
+                    self.image_count = 0
+
+                    add_tag_to_one_folder(join(self.work_folder, self.last_listdir), self.last_listdir, '111', '000')
+                    send_folder_to_pacs(join(self.work_folder, self.last_listdir))
+                    print('send to pacs finished', self.last_listdir)
+                    print(self.image_count, 'before reset')
+                    #process_to_file(join('/incoming/data', current_dir), event.pathname)
+                    #self.image_count += 1
+                    print(self.image_count, 'after reset')
+                    #self.last_listdir = current_dir
+                    #self.proc_list.append(current_dir)
+
+
+
+
+
+            elif self.last_listdir != current_dir and current_dir not in self.proc_list:
+                # check if folder new or already 4 image processed
 
                 # print('\n'*3, 'proc_list: ', self.proc_list, '\n', current_dir, '\n'*2, self.last_listdir)
-
-                add_tag_to_one_folder(join(self.work_folder, self.last_listdir), self.last_listdir, '111', '000')
-                send_folder_to_pacs(join(self.work_folder, self.last_listdir))
-                print('send to pacs finished', self.last_listdir)
+                if self.last_listdir not in self.proc_list:
+                    #work in case if series have only 2 images
+                    add_tag_to_one_folder(join(self.work_folder, self.last_listdir), self.last_listdir, '111', '000')
+                    send_folder_to_pacs(join(self.work_folder, self.last_listdir))
+                    print('send to pacs finished', self.last_listdir)
+                self.image_count = 0
                 process_to_file(join('/incoming/data', current_dir), event.pathname)
+                self.image_count += 1
 
                 self.last_listdir = current_dir
                 self.proc_list.append(current_dir)
+
+
+
 
 
 if __name__ == '__main__':
