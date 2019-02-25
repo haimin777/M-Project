@@ -8,6 +8,7 @@ import numpy as np
 import pydicom as pyd
 import pyinotify
 from keras.models import load_model
+from keras import backend as K
 
 
 def make_predictition(image, model_path='/home/haimin/PycharmProjects/Tensorflow/ddsm_YaroslavNet_s10.h5'):
@@ -17,6 +18,7 @@ def make_predictition(image, model_path='/home/haimin/PycharmProjects/Tensorflow
     image = np.expand_dims(image, 0)
     model = load_model(model_path)
     res = model.predict(image)
+    K.clear_session()
     return res
 
 

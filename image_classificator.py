@@ -11,6 +11,7 @@ import os
 import matplotlib.pyplot as plt
 import pydicom
 import shutil as sh
+import glob
 
 
 class ImageClassificator:
@@ -31,14 +32,8 @@ class ImageClassificator:
                 print("deleting ", p1)
                 os.remove(p1)
 
-    def recursive_list(self):
-        n = 1
-        for root, dirs, files in os.walk(self.dir_from):
-            for name in files:
-                print("copy {} to {}".format(name, n))
-                sh.copyfile(os.path.join(root, name),
-                            os.path.join(self.dir_to, str(n)))
-                n += 1
+
+
 
     def print_image(self, im):
 
