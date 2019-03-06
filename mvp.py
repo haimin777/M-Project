@@ -10,6 +10,9 @@ import pyinotify
 from keras.models import load_model
 from keras import backend as K
 
+import argparse
+parser = argparse.ArgumentParser()
+
 
 def make_predictition(image, model_path='/home/haimin/PycharmProjects/Tensorflow/ddsm_YaroslavNet_s10.h5'):
     image = pyd.dcmread(image).pixel_array/14.5
