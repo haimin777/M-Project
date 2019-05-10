@@ -11,6 +11,8 @@ from keras.models import load_model
 from keras import backend as K
 
 
+
+
 def make_predictition(image, model_path='/home/haimin/PycharmProjects/Tensorflow/ddsm_YaroslavNet_s10.h5'):
     image = pyd.dcmread(image).pixel_array/14.5
     image = cv2.resize(image, (896, 1152), interpolation=cv2.INTER_AREA)
