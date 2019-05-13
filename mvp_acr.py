@@ -22,15 +22,7 @@ def make_predictition_acr(image, model_path='/home/haimin/PycharmProjects/xray_d
     K.clear_session()
     return res
 
-'''
- 'Generates data containing batch_size samples'  # X : (n_samples, *dim, n_channels)
-        # Initialization
-        X = [np.empty((self.batch_size, 2600, 2000, self.n_channels)),
-             np.empty((self.batch_size, 2600, 2000, self.n_channels)),
-             np.empty((self.batch_size, 2600, 2000, self.n_channels)),
-             np.empty((self.batch_size, 2600, 2000, self.n_channels))]
 
-'''
 def load_and_norm(path):
     ds = pyd.dcmread(path)
     image = ds.pixel_array
@@ -48,10 +40,6 @@ def load_and_norm(path):
 def preprocess_one_image(X, img_path):
 
     # recognize projection and generate input for model
-
-
-    # print(img.shape)
-    # try to set images on projections
 
     try:
         img, ds1 = load_and_norm(img_path)
@@ -137,7 +125,6 @@ class EventHandler(pyinotify.ProcessEvent):
                 elif self.image_count == 4:
                     # check if folder new or already 4 image processed
 
-                    # print('\n'*3, 'proc_list: ', self.proc_list, '\n', current_dir, '\n'*2, self.last_listdir)
                     self.image_count = 0
 
                     self.predict = make_predictition_acr(self.X)[0]
@@ -145,10 +132,9 @@ class EventHandler(pyinotify.ProcessEvent):
                     self.add_tag_to_one_folder_acr(join(self.work_folder, self.last_listdir), ['ACR_1', 'ACR_2', 'ACR_3', 'ACR_4'])
                     mvp.send_folder_to_pacs(join(self.work_folder, self.last_listdir))
                     print('send to pacs finished', self.last_listdir)
-                    print(self.image_count, 'before reset')
-                    #process_to_file(join('/incoming/data', current_dir), event.pathname)
+                    #print(self.image_count, 'before reset')
                     #self.image_count += 1
-                    print(self.image_count, 'after reset')
+                    #print(self.image_count, 'after reset')
                     #self.last_listdir = current_dir
                     #self.proc_list.append(current_dir)
 
@@ -166,8 +152,6 @@ class EventHandler(pyinotify.ProcessEvent):
                     mvp.send_folder_to_pacs(join(self.work_folder, self.last_listdir))
                     print('sended to PACS without tags')
                 self.image_count = 0
-                #process_to_file(join('/incoming/data', current_dir), event.pathname)
-                #make_predictition_acr(self.X)
                 self.X = [np.empty((1, 2600, 2000, 1)),
                           np.empty((1, 2600, 2000, 1)),
                           np.empty((1, 2600, 2000, 1)),
@@ -189,7 +173,6 @@ if __name__ == '__main__':
     notifier = pyinotify.AsyncioNotifier(wm, loop, default_proc_fun=EventHandler())
 
     wdd = wm.add_watch('/incoming/data', mask, rec=True, auto_add=True)
-    # wdd = wm.add_watch('/var/lib/orthanc/db-v6', mask, rec=True, auto_add=True)
 
     try:
         loop.run_forever()
