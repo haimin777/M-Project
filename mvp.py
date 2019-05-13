@@ -54,7 +54,7 @@ def add_tag(image, tag):
     img.StudyID = tag
     pyd.dcmwrite(image, img)
 
-    print('tag added {} to {}'.format(tag, image))
+    #print('tag added {} to {}'.format(tag, image))
 
 
 def add_tag_to_one_folder(folder, folder_name, tag1, tag2):
