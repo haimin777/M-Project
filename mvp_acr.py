@@ -125,9 +125,8 @@ class EventHandler(pyinotify.ProcessEvent):
                 print(self.image_count, 'with None')
 
             elif self.last_listdir == current_dir and self.image_count !=0:
+                # if folder not new, but new image detected, than process it and add to self.X
 
-
-                #process_to_file(join(self.work_folder, current_dir), event.pathname)
                 preprocess_one_image(self.X, event.pathname)
 
                 self.image_count += 1
@@ -163,14 +162,17 @@ class EventHandler(pyinotify.ProcessEvent):
                 # print('\n'*3, 'proc_list: ', self.proc_list, '\n', current_dir, '\n'*2, self.last_listdir)
                 if self.last_listdir not in self.proc_list:
 
-                    #work in case if series have only 2 images
-                    self.predict = make_predictition_acr(self.X)[0]
-                    print(self.predict)
-                    self.add_tag_to_one_folder_acr(join(self.work_folder, self.last_listdir), ['ACR_1', 'ACR_2', 'ACR_3', 'ACR_4'])
+                    #work in case if series have only 2 images, than just send it to PACS
                     mvp.send_folder_to_pacs(join(self.work_folder, self.last_listdir))
+                    print('sended to PACS without tags')
                 self.image_count = 0
                 #process_to_file(join('/incoming/data', current_dir), event.pathname)
-                make_predictition_acr(self.X)
+                #make_predictition_acr(self.X)
+                self.X = [np.empty((1, 2600, 2000, 1)),
+                          np.empty((1, 2600, 2000, 1)),
+                          np.empty((1, 2600, 2000, 1)),
+                          np.empty((1, 2600, 2000, 1))]
+                preprocess_one_image(self.X, event.pathname)
                 self.image_count += 1
 
                 self.last_listdir = current_dir

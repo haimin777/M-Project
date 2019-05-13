@@ -47,7 +47,7 @@ def process_to_file(folder, img):
 
 def add_tag(image, tag):
     # add tag and save in another folder (target)
-    print(image, 'from add tag')
+    #print(image, 'from add tag')
     img = pyd.dcmread(image)
     img.AccessionNumber = tag
     img.ImageComments = tag
@@ -106,7 +106,7 @@ def send_folder_to_pacs(folder):
     dcm_paths = glob.glob(folder + '/*/*/*.dcm')
     for f in dcm_paths:
         comand = 'dcmsend 3.120.139.162 4242 ' + f
-        print(f, '-- sended to pask')
+        print(f.split('/')[3], '-- sended to pask')
         #os.system(comand)
 
 
@@ -169,10 +169,11 @@ class EventHandler(pyinotify.ProcessEvent):
 
                 # print('\n'*3, 'proc_list: ', self.proc_list, '\n', current_dir, '\n'*2, self.last_listdir)
                 if self.last_listdir not in self.proc_list:
+                    print('new folder detected', '\n'*2)
                     #work in case if series have only 2 images
-                    add_tag_to_one_folder(join(self.work_folder, self.last_listdir), self.last_listdir, '111', '000')
+                    #add_tag_to_one_folder(join(self.work_folder, self.last_listdir), self.last_listdir, '111', '000')
                     send_folder_to_pacs(join(self.work_folder, self.last_listdir))
-                    print('send to pacs finished', self.last_listdir)
+                    print('sended to pacs without tags', self.last_listdir, '\n'*2)
                 self.image_count = 0
                 process_to_file(join('/incoming/data', current_dir), event.pathname)
                 self.image_count += 1
