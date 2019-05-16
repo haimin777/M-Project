@@ -50,13 +50,14 @@ def preprocess_one_image(X, img_path):
 
             X[0][0] = img
         elif ds1.ImageType[3] == 'RIGHT' and ds1.ViewPosition == 'CC':
-
+            img = np.flip(img, axis=2)
             X[1][0] = img
         elif ds1.ImageType[3] == 'LEFT' and ds1.ViewPosition == 'MLO':
 
             X[2][0] = img
 
         elif ds1.ImageType[3] == 'RIGHT' and ds1.ViewPosition == 'MLO':
+            img = np.flip(img, axis=2)
 
             X[3][0] = img
 
